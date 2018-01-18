@@ -1,5 +1,5 @@
 help:
-	@echo "root-chain" - starts the root chain and 
+	@echo "root-chain - starts the root chain and"
 	@echo "clean-build - remove build artifacts"
 	@echo "clean-pyc - remove Python file artifacts"
 	@echo "lint - check style with flake8"
