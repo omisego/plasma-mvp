@@ -51,5 +51,5 @@ class Deployer(object):
         contract_address = tx_receipt['contractAddress']
 
         # Contract instance in concise mode
-        contract_instance = self.w3.eth.contract(abi, contract_address, ContractFactoryClass=ConciseContract)
+        contract_instance = self.w3.eth.contract(contract_address, ContractFactoryClass=ConciseContract, abi=abi)
         return contract_instance
