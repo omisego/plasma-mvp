@@ -14,16 +14,19 @@ library Validate {
         bytes memory sig2 = ByteUtils.slice(sigs, 65, 65);
         bytes memory confSig1 = ByteUtils.slice(sigs, 130, 65);
         bytes32 confirmationHash = keccak256(txHash, rootHash);
+
         if (inputCount == 0) {
             return msg.sender == ECRecovery.recover(confirmationHash, confSig1);
         }
-        if (inputCount < 1000000000) {
-            return ECRecovery.recover(txHash, sig1) == ECRecovery.recover(confirmationHash, confSig1);
-        } else {
+        bool check1 = true;
+        bool check2 = true;
+        if ((inputCount % 10 ** 9) > 0) {
+            check1 = ECRecovery.recover(txHash, sig1) == ECRecovery.recover(confirmationHash, confSig1);
+        } 
+        if (inputCount >= 1000000000) {
             bytes memory confSig2 = ByteUtils.slice(sigs, 195, 65);
-            bool check1 = ECRecovery.recover(txHash, sig1) == ECRecovery.recover(confirmationHash, confSig1);
-            bool check2 = ECRecovery.recover(txHash, sig2) == ECRecovery.recover(confirmationHash, confSig2);
-            return check1 && check2;
+            check2 = ECRecovery.recover(txHash, sig2) == ECRecovery.recover(confirmationHash, confSig2);
         }
+        return check1 && check2;
     }
 }
