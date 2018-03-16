@@ -44,6 +44,7 @@ contract RootChain {
     struct exit {
         address owner;
         uint256 amount;
+        uint256 bond;
         uint256 utxoPos;
     }
 
