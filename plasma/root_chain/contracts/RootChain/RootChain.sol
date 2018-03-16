@@ -141,7 +141,7 @@ contract RootChain {
         bytes32 root = childChain[blknum].root;
 
         require(msg.sender == txList[6 + 2 * oindex].toAddress());
-        require(msg.value >= txList[7 + 2 * txPos[2]].toUint() * minExitBond / 100);
+        require(msg.value >= txList[7 + 2 * oindex].toUint() * minExitBond / 100);
         bytes32 txHash = keccak256(txBytes);
         bytes32 merkleHash = keccak256(txHash, ByteUtils.slice(sigs, 0, 130));
         uint256 inputCount = txList[3].toUint() * 1000000000 + txList[0].toUint();
