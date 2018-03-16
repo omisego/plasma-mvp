@@ -37,6 +37,9 @@ contract RootChain {
     uint256 public currentChildBlock;
     uint256 public recentBlock;
     uint256 public weekOldBlock;
+    uint256 minExitBond; //this is a percentage out of 100 that user must stake to exit.
+
+    bytes32[16] zeroHashes;
 
     struct exit {
         address owner;
@@ -72,6 +75,12 @@ contract RootChain {
         authority = msg.sender;
         currentChildBlock = 1;
         exitsQueue = new PriorityQueue();
+        minExitBond = 5; // 5% of UTXO
+        bytes32 intermediate;
+        for (uint256 i = 0; i < 16; i += 1) {
+            zeroHashes[i] = intermediate;
+            intermediate = keccak256(intermediate, intermediate);
+        }
     }
 
     // @dev Allows Plasma chain operator to submit block root
@@ -104,11 +113,9 @@ contract RootChain {
         }
         require(txList[7].toUint() == msg.value);
         require(txList[9].toUint() == 0);
-        bytes32 zeroBytes;
         bytes32 root = keccak256(keccak256(txBytes), new bytes(130));
         for (i = 0; i < 16; i++) {
-            root = keccak256(root, zeroBytes);
-            zeroBytes = keccak256(zeroBytes, zeroBytes);
+            root = keccak256(root, zeroHashes[i]);
         }
         childChain[currentChildBlock] = childBlock({
             root: root,
@@ -134,6 +141,7 @@ contract RootChain {
         bytes32 root = childChain[blknum].root;
 
         require(msg.sender == txList[6 + 2 * oindex].toAddress());
+        require(msg.value >= txList[7 + 2 * txPos[2]].toUint() * minExitBond / 100);
         bytes32 txHash = keccak256(txBytes);
         bytes32 merkleHash = keccak256(txHash, ByteUtils.slice(sigs, 0, 130));
         uint256 inputCount = txList[3].toUint() * 1000000000 + txList[0].toUint();
@@ -153,6 +161,7 @@ contract RootChain {
         exits[priority] = exit({
             owner: txList[6 + 2 * oindex].toAddress(),
             amount: txList[7 + 2 * oindex].toUint(),
+            bond: msg.value,
             utxoPos: utxoPos
         });
         Exit(msg.sender, utxoPos);
@@ -178,6 +187,8 @@ contract RootChain {
 
         require(owner == ECRecovery.recover(confirmationHash, confirmationSig));
         require(merkleHash.checkMembership(txindex, root, proof));
+
+        msg.sender.transfer(exits[priority].bond);
         delete exits[priority];
         delete exitIds[eUtxoPos];
     }
@@ -194,7 +205,7 @@ contract RootChain {
         exit memory currentExit = exits[exitsQueue.getMin()];
         uint256 blknum = currentExit.utxoPos.div(1000000000);
         while (childChain[blknum].created_at < twoWeekOldTimestamp && exitsQueue.currentSize() > 0) {
-            currentExit.owner.transfer(currentExit.amount);
+            currentExit.owner.transfer(currentExit.amount + currentExit.bond);
             uint256 priority = exitsQueue.delMin();
             delete exits[priority];
             delete exitIds[currentExit.utxoPos];
