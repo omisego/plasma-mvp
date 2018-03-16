@@ -40,6 +40,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     sigs = tx1.sig1 + tx1.sig2 + confirmSig1
     utxoId = 1 * 1000000000 + 10000 * 0 + 0
     # Deposit exit
+    print(int(value_1 * root_chain.minExitBond() / 100 + 1))
     root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=int(value_1 * root_chain.minExitBond() / 100 + 1))
 
     t.chain.head_state.timestamp += week_and_a_half
