@@ -37,7 +37,7 @@ contract RootChain {
     uint256 public currentChildBlock;
     uint256 public recentBlock;
     uint256 public weekOldBlock;
-    uint256 minExitBond; //this is a percentage out of 100 that user must stake to exit.
+    uint256 public minExitBond; //this is a percentage out of 100 that user must stake to exit.
 
     bytes32[16] zeroHashes;
 
