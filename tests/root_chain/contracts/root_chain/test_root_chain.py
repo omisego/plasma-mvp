@@ -112,7 +112,7 @@ def test_challenge_exit(t, u, root_chain):
     assert root_chain.exits(exitId1) == ['0x' + owner.hex(), 100, 6, exitId1]
     assert root_chain.exitIds(exitId1) == exitId1
     root_chain.challengeExit(exitId2, exitId1, tx_bytes2, proof, sigs, confirmSig)
-    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0]
+    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0, 0]
     assert root_chain.exitIds(exitId1) == 0
 
 
@@ -137,5 +137,5 @@ def test_finalize_exits(t, u, root_chain):
     root_chain.finalizeExits(sender=t.k2)
     post_balance = t.chain.head_state.get_balance(owner)
     assert post_balance == pre_balance + value_1 + int(value_1 * root_chain.minExitBond() / 100 + 1)
-    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0]
+    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0, 0]
     assert root_chain.exitIds(exitId1) == 0
