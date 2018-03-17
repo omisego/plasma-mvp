@@ -229,7 +229,7 @@ contract RootChain {
     function getExit(uint256 priority)
         public
         view
-        returns (address, uint256, uint256)
+        returns (address, uint256, uint256, uint256)
     {
         return (exits[priority].owner, exits[priority].amount, exits[priority].bond, exits[priority].utxoPos);
     }
