@@ -24,7 +24,7 @@ contract RootChain {
      * Events
      */
     event Deposit(address depositor, uint256 amount);
-    event Exit(address exitor, uint256 utxoPos);
+    event Exit(address exitor, uint256 bond, uint256 utxoPos);
 
     /*
      *  Storage
@@ -166,7 +166,7 @@ contract RootChain {
             bond: msg.value,
             utxoPos: utxoPos
         });
-        Exit(msg.sender, utxoPos);
+        Exit(msg.sender, msg.value, utxoPos);
     }
 
     // @dev Allows anyone to challenge an exiting transaction by submitting proof of a double spend on the child chain
@@ -231,6 +231,6 @@ contract RootChain {
         view
         returns (address, uint256, uint256)
     {
-        return (exits[priority].owner, exits[priority].amount, exits[priority].utxoPos);
+        return (exits[priority].owner, exits[priority].amount, exits[priority].bond, exits[priority].utxoPos);
     }
 }
