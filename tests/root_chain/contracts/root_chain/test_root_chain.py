@@ -46,7 +46,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     t.chain.head_state.timestamp += week_and_a_half
     # Cannot exit twice off of the same utxo
     exitId1 = 1 * 1000000000 + 10000 * 0 + 0
-    assert_tx_failed(lambda: root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1)))
+    assert_tx_failed(lambda: root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1))
     assert root_chain.getExit(priority1) == ['0x' + owner.hex(), 100, 6, exitId1]
     t.chain.revert(snapshot)
 
