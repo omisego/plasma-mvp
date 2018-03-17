@@ -24,7 +24,7 @@ contract RootChain {
      * Events
      */
     event Deposit(address depositor, uint256 amount);
-    event Exit(address exitor, uint256 bond, uint256 utxoPos);
+    event Exit(address exitor, uint256 utxoPos);
 
     /*
      *  Storage
@@ -44,7 +44,6 @@ contract RootChain {
     struct exit {
         address owner;
         uint256 amount;
-        uint256 bond;
         uint256 utxoPos;
     }
 
@@ -143,7 +142,8 @@ contract RootChain {
         bytes32 root = childChain[blknum].root;
 
         require(msg.sender == txList[6 + 2 * oindex].toAddress());
-        require(msg.value >= minExitBond);
+        require(msg.value == minExitBond);
+
         bytes32 txHash = keccak256(txBytes);
         bytes32 merkleHash = keccak256(txHash, ByteUtils.slice(sigs, 0, 130));
         uint256 inputCount = txList[3].toUint() * 1000000000 + txList[0].toUint();
@@ -163,10 +163,9 @@ contract RootChain {
         exits[priority] = exit({
             owner: txList[6 + 2 * oindex].toAddress(),
             amount: txList[7 + 2 * oindex].toUint(),
-            bond: msg.value,
             utxoPos: utxoPos
         });
-        Exit(msg.sender, msg.value, utxoPos);
+        Exit(msg.sender, utxoPos);
     }
 
     // @dev Allows anyone to challenge an exiting transaction by submitting proof of a double spend on the child chain
@@ -190,7 +189,8 @@ contract RootChain {
         require(owner == ECRecovery.recover(confirmationHash, confirmationSig));
         require(merkleHash.checkMembership(txindex, root, proof));
 
-        msg.sender.transfer(exits[priority].bond);
+        msg.sender.transfer(minExitBond);
+
         delete exits[priority];
         delete exitIds[eUtxoPos];
     }
@@ -207,7 +207,8 @@ contract RootChain {
         exit memory currentExit = exits[exitsQueue.getMin()];
         uint256 blknum = currentExit.utxoPos.div(1000000000);
         while (childChain[blknum].created_at < twoWeekOldTimestamp && exitsQueue.currentSize() > 0) {
-            currentExit.owner.transfer(currentExit.amount + currentExit.bond);
+            currentExit.owner.transfer(currentExit.amount + minExitBond);
+
             uint256 priority = exitsQueue.delMin();
             delete exits[priority];
             delete exitIds[currentExit.utxoPos];
@@ -229,8 +230,8 @@ contract RootChain {
     function getExit(uint256 priority)
         public
         view
-        returns (address, uint256, uint256, uint256)
+        returns (address, uint256, uint256)
     {
-        return (exits[priority].owner, exits[priority].amount, exits[priority].bond, exits[priority].utxoPos);
+        return (exits[priority].owner, exits[priority].amount, exits[priority].utxoPos);
     }
 }

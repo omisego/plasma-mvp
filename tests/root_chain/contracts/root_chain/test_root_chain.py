@@ -47,7 +47,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     # Cannot exit twice off of the same utxo
     exitId1 = 1 * 1000000000 + 10000 * 0 + 0
     assert_tx_failed(lambda: root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1))
-    assert root_chain.getExit(priority1) == ['0x' + owner.hex(), 100, bond_1, exitId1]
+    assert root_chain.getExit(priority1) == ['0x' + owner.hex(), 100, exitId1]
     t.chain.revert(snapshot)
 
     tx2 = Transaction(1, 0, 0, 0, 0, 0,
@@ -64,7 +64,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     # Single input exit
     exitId2 = 2 * 1000000000 + 10000 * 0 + 0
     root_chain.startExit(exitId2, tx_bytes2, proof, sigs, sender=key, value=bond_1)
-    assert root_chain.getExit(priority2) == ['0x' + owner.hex(), 100, bond_1, exitId2]
+    assert root_chain.getExit(priority2) == ['0x' + owner.hex(), 100, exitId2]
     t.chain.revert(snapshot)
 
     root_chain.deposit(tx_bytes1, value=value_1)
@@ -83,7 +83,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     # Double input exit
     exitId3 = 4 * 1000000000 + 10000 * 0 + 0
     root_chain.startExit(exitId3, tx_bytes3, proof, sigs, sender=key, value=bond_1)
-    assert root_chain.getExit(priority3) == ['0x' + owner.hex(), 100, bond_1, exitId3]
+    assert root_chain.getExit(priority3) == ['0x' + owner.hex(), 100, exitId3]
 
 
 def test_challenge_exit(t, u, root_chain):
@@ -110,10 +110,14 @@ def test_challenge_exit(t, u, root_chain):
     confirmSig = confirm_tx(tx2, root_chain.getChildChain(2)[0], key)
     sigs = tx2.sig1 + tx2.sig2
     exitId2 = 2 * 1000000000 + 10000 * 0 + 0
-    assert root_chain.exits(exitId1) == ['0x' + owner.hex(), 100, bond_1, exitId1]
+    assert root_chain.exits(exitId1) == ['0x' + owner.hex(), 100, exitId1]
     assert root_chain.exitIds(exitId1) == exitId1
-    root_chain.challengeExit(exitId2, exitId1, tx_bytes2, proof, sigs, confirmSig)
-    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0, 0]
+
+    pre_balance = t.chain.head_state.get_balance(t.a3)
+    root_chain.challengeExit(exitId2, exitId1, tx_bytes2, proof, sigs, confirmSig, sender=t.k3)
+    post_balance = t.chain.head_state.get_balance(t.a3)
+    assert post_balance == pre_balance + root_chain.minExitBond()  # asserts that challenger receives bond
+    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0]
     assert root_chain.exitIds(exitId1) == 0
 
 
@@ -133,11 +137,11 @@ def test_finalize_exits(t, u, root_chain):
     bond_1 = root_chain.minExitBond()
     root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1)
     t.chain.head_state.timestamp += two_weeks * 2
-    assert root_chain.exits(exitId1) == ['0x' + owner.hex(), 100, bond_1, exitId1]
+    assert root_chain.exits(exitId1) == ['0x' + owner.hex(), 100, exitId1]
     assert root_chain.exitIds(exitId1) == exitId1
     pre_balance = t.chain.head_state.get_balance(owner)
     root_chain.finalizeExits(sender=t.k2)
     post_balance = t.chain.head_state.get_balance(owner)
     assert post_balance == pre_balance + value_1 + bond_1
-    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0, 0]
+    assert root_chain.exits(exitId1) == ['0x0000000000000000000000000000000000000000', 0, 0]
     assert root_chain.exitIds(exitId1) == 0
