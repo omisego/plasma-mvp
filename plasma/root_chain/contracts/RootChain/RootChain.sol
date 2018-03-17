@@ -133,6 +133,7 @@ contract RootChain {
     // @param sigs Both transaction signatures and confirmations signatures used to verify that the exiting transaction has been confirmed
     function startExit(uint256 utxoPos, bytes txBytes, bytes proof, bytes sigs)
         public
+        payable
         incrementOldBlocks
     {
         var txList = txBytes.toRLPItem().toList(11);
