@@ -40,13 +40,13 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     sigs = tx1.sig1 + tx1.sig2 + confirmSig1
     utxoId = 1 * 1000000000 + 10000 * 0 + 0
     # Deposit exit
-    bond = int(value_1 * root_chain.minExitBond() / 100 + 1)
-    root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=bond)
+    bond_1 = int(value_1 * root_chain.minExitBond() / 100 + 1)
+    root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=bond_1)
 
     t.chain.head_state.timestamp += week_and_a_half
     # Cannot exit twice off of the same utxo
     exitId1 = 1 * 1000000000 + 10000 * 0 + 0
-    assert_tx_failed(lambda: root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond)))
+    assert_tx_failed(lambda: root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1)))
     assert root_chain.getExit(priority1) == ['0x' + owner.hex(), 100, 6, exitId1]
     t.chain.revert(snapshot)
 
@@ -63,7 +63,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     snapshot = t.chain.snapshot()
     # Single input exit
     exitId2 = 2 * 1000000000 + 10000 * 0 + 0
-    root_chain.startExit(exitId2, tx_bytes2, proof, sigs, sender=key, value=bond)
+    root_chain.startExit(exitId2, tx_bytes2, proof, sigs, sender=key, value=bond_1)
     assert root_chain.getExit(priority2) == ['0x' + owner.hex(), 100, 6, exitId2]
     t.chain.revert(snapshot)
 
@@ -82,7 +82,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     sigs = tx3.sig1 + tx3.sig2 + confirmSig1 + confirmSig2
     # Double input exit
     exitId3 = 4 * 1000000000 + 10000 * 0 + 0
-    root_chain.startExit(exitId3, tx_bytes3, proof, sigs, sender=key, value=bond)
+    root_chain.startExit(exitId3, tx_bytes3, proof, sigs, sender=key, value=bond_1)
     assert root_chain.getExit(priority3) == ['0x' + owner.hex(), 100, 6, exitId3]
 
 
@@ -98,8 +98,8 @@ def test_challenge_exit(t, u, root_chain):
     confirmSig1 = confirm_tx(tx1, root_chain.getChildChain(1)[0], key)
     sigs = tx1.sig1 + tx1.sig2 + confirmSig1
     exitId1 = 1 * 1000000000 + 10000 * 0 + 0
-    bond = int(value_1 * root_chain.minExitBond() / 100 + 1)
-    root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond)
+    bond_1 = int(value_1 * root_chain.minExitBond() / 100 + 1)
+    root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1)
     tx2 = Transaction(1, 0, 0, 0, 0, 0,
                       owner, value_1, null_address, 0, 0)
     tx2.sign1(key)
@@ -130,8 +130,8 @@ def test_finalize_exits(t, u, root_chain):
     confirmSig1 = confirm_tx(tx1, root_chain.getChildChain(1)[0], key)
     sigs = tx1.sig1 + tx1.sig2 + confirmSig1
     exitId1 = 1 * 1000000000 + 10000 * 0 + 0
-    bond = int(value_1 * root_chain.minExitBond() / 100 + 1)
-    root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond)
+    bond_1 = int(value_1 * root_chain.minExitBond() / 100 + 1)
+    root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1)
     t.chain.head_state.timestamp += two_weeks * 2
     assert root_chain.exits(exitId1) == ['0x' + owner.hex(), 100, 6, exitId1]
     assert root_chain.exitIds(exitId1) == exitId1
