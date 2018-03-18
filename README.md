@@ -6,7 +6,11 @@ Install dependencies with:
 
 ``make``
 
-The MVP requires Solidity 0.4.18.
+The MVP requires Solidity 0.4.18. Maybe you need `brew unlink solidity` before installing.
+
+```
+brew install https://raw.githubusercontent.com/ethereum/homebrew-ethereum/2aea171d7d6901b97d5f1f71bd07dd88ed5dfb42/solidity.rb
+```
 
 How to run Plasma MVP:
 
