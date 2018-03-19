@@ -45,7 +45,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     assert_tx_failed(lambda: root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key))  # value = 0
 
     # Exiting by posting higher bond reverts
-    assert_tx_failed(lambda: root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=bond_1 + 50))  # value = 0
+    assert_tx_failed(lambda: root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=bond_1 + 50))  # value = 10050
 
     # Deposit exit
     root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=bond_1)
