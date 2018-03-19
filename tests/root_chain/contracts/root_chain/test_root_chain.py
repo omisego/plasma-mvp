@@ -39,8 +39,15 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     snapshot = t.chain.snapshot()
     sigs = tx1.sig1 + tx1.sig2 + confirmSig1
     utxoId = 1 * 1000000000 + 10000 * 0 + 0
-    # Deposit exit
     bond_1 = root_chain.minExitBond()
+
+    # Cannot exit without posting bond
+    assert_tx_failed(lambda: root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key))  # value = 0
+
+    # Exiting by posting higher bond reverts
+    assert_tx_failed(lambda: root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=bond_1 + 50))  # value = 0
+
+    # Deposit exit
     root_chain.startExit(utxoId, tx_bytes1, proof, sigs, sender=key, value=bond_1)
 
     t.chain.head_state.timestamp += week_and_a_half
