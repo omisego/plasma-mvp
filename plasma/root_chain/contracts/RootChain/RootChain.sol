@@ -135,6 +135,7 @@ contract RootChain {
         bytes32 root = childChain[blknum].root;
 
         require(msg.sender == txList[6 + 2 * oindex].toAddress());
+        require(txList[7 + 2 * oindex].toUint() > 0)
         bytes32 txHash = keccak256(txBytes);
         bytes32 merkleHash = keccak256(txHash, ByteUtils.slice(sigs, 0, 130));
         require(Validate.checkSigs(txHash, root, txList[0].toUint(), txList[3].toUint(), sigs));
@@ -210,9 +211,7 @@ contract RootChain {
         public
         returns (uint256)
     {
-        if (balances[msg.sender] == 0) {
-            return 0;
-        }
+        require(balances[msg.sender] > 0);
         uint256 transferAmount = balances[msg.sender];
         delete balances[msg.sender];
         msg.sender.transfer(transferAmount);
