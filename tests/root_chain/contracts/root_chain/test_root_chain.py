@@ -124,6 +124,7 @@ def test_challenge_exit(t, u, root_chain):
     confirmSig1 = confirm_tx(tx1, root_chain.getChildChain(dep1_blknum)[0], key)
     sigs = tx1.sig1 + tx1.sig2 + confirmSig1
     exitId1 = dep1_blknum * 1000000000 + 10000 * 0 + 0
+    bond_1 = root_chain.minExitBond()
     root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1)
     tx2 = Transaction(dep1_blknum, 0, 0, 0, 0, 0,
                       owner, value_1, null_address, 0, 0)
@@ -160,6 +161,7 @@ def test_finalize_exits(t, u, root_chain):
     proof = merkle.create_membership_proof(tx1.merkle_hash)
     confirmSig1 = confirm_tx(tx1, root_chain.getChildChain(dep1_blknum)[0], key)
     sigs = tx1.sig1 + tx1.sig2 + confirmSig1
+    bond_1 = root_chain.minExitBond()
 
     exitId1 = dep1_blknum * 1000000000 + 10000 * 0 + 0
     root_chain.startExit(exitId1, tx_bytes1, proof, sigs, sender=key, value=bond_1)
