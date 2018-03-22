@@ -85,7 +85,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     # # Single input exit
     exitId2 = child_blknum * 1000000000 + 10000 * 0 + 0
     root_chain.startExit(exitId2, tx_bytes2, proof, sigs, sender=key, value=bond_1)
-    
+
     assert root_chain.getExit(priority2) == ['0x' + owner.hex(), 100, exitId2]
     t.chain.revert(snapshot)
     dep2_blknum = root_chain.getDepositBlock()
