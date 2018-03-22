@@ -12,7 +12,7 @@ contract PriorityQueue {
         _;
     }
 
-    /* 
+    /*
      *  Storage
      */
     address owner;
@@ -27,7 +27,7 @@ contract PriorityQueue {
         currentSize = 0;
     }
 
-    function insert(uint256 k) 
+    function insert(uint256 k)
         public
         onlyOwner
     {
@@ -73,7 +73,15 @@ contract PriorityQueue {
         return retVal;
     }
 
-    function percUp(uint256 i) 
+    function isEmpty()
+        public
+        view
+        returns (bool)
+    {
+        return currentSize == 0;
+    }
+
+    function percUp(uint256 i)
         private
     {
         while (i.div(2) > 0) {

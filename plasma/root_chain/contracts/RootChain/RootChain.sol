@@ -4,6 +4,7 @@ import 'Math.sol';
 import 'RLP.sol';
 import 'Merkle.sol';
 import 'Validate.sol';
+import 'ArrayUtils.sol';
 import 'PriorityQueue.sol';
 
 
@@ -15,6 +16,7 @@ import 'PriorityQueue.sol';
 
 contract RootChain {
     using SafeMath for uint256;
+    using ArrayUtils for uint256[];
     using RLP for bytes;
     using RLP for RLP.RLPItem;
     using RLP for RLP.Iterator;
@@ -31,7 +33,7 @@ contract RootChain {
      */
     mapping(uint256 => childBlock) public childChain;
     mapping(uint256 => exit) public exits;
-    mapping(uint256 => uint256) public exitIds;
+    mapping(uint256 => uint256[]) public exitIds;
     PriorityQueue exitsQueue;
     address public authority;
     /* Block numbering scheme below is needed to prevent Ethereum reorg from invalidating blocks submitted
@@ -49,7 +51,8 @@ contract RootChain {
     struct exit {
         address owner;
         uint256 amount;
-        uint256 utxoPos;
+        uint256 priority;
+        bool exist;
     }
 
     struct childBlock {
@@ -179,13 +182,19 @@ contract RootChain {
         } else {
             priority = utxoPos;
         }
-        require(exitIds[utxoPos] == 0);
-        exitIds[utxoPos] = priority;
-        exitsQueue.insert(priority);
-        exits[priority] = exit({
+        require(!exits[utxoPos].exist);
+        if (exitIds[priority].length != 0) {
+            require(exitIds[priority].indexOf(utxoPos) == -1);
+        } else {
+            exitsQueue.insert(priority);
+        }
+
+        exitIds[priority].push(utxoPos);
+        exits[utxoPos] = exit({
             owner: txList[6 + 2 * oindex].toAddress(),
             amount: txList[7 + 2 * oindex].toUint(),
-            utxoPos: utxoPos
+            priority: priority,
+            exist: true
         });
         Exit(msg.sender, utxoPos);
     }
@@ -202,16 +211,19 @@ contract RootChain {
     {
         uint256 txindex = (cUtxoPos % 1000000000) / 10000;
         bytes32 root = childChain[cUtxoPos / 1000000000].root;
-        uint256 priority = exitIds[eUtxoPos];
         var txHash = keccak256(txBytes);
         var confirmationHash = keccak256(txHash, root);
         var merkleHash = keccak256(txHash, sigs);
-        address owner = exits[priority].owner;
+
+        // Check if the exit exists
+        require(exits[eUtxoPos].exist);
+        address owner = exits[eUtxoPos].owner;
+        uint256 priority = exits[eUtxoPos].priority;
 
         require(owner == ECRecovery.recover(confirmationHash, confirmationSig));
         require(merkleHash.checkMembership(txindex, root, proof));
-        delete exits[priority];
-        delete exitIds[eUtxoPos];
+        delete exits[eUtxoPos];
+        exitIds[priority].remove(eUtxoPos);
     }
 
 
@@ -222,19 +234,19 @@ contract RootChain {
         incrementOldBlocks
         returns (uint256)
     {
-        uint256 twoWeekOldTimestamp = block.timestamp.sub(2 weeks);
-        exit memory currentExit = exits[exitsQueue.getMin()];
-        uint256 blknum = currentExit.utxoPos.div(1000000000);
-        while (childChain[blknum].created_at < twoWeekOldTimestamp && exitsQueue.currentSize() > 0) {
-            currentExit.owner.transfer(currentExit.amount);
+        while (!exitsQueue.isEmpty() && now > exitsQueue.getMin() + 2 weeks) {
             uint256 priority = exitsQueue.delMin();
+            for (uint256 i = 0; i < exitIds[priority].length; i++) {
+                uint256 index = exitIds[priority][i];
+                exit memory currentExit = exits[index];
+                currentExit.owner.transfer(currentExit.amount);
+                delete exitIds[index];
+            }
             delete exits[priority];
-            delete exitIds[currentExit.utxoPos];
-            currentExit = exits[exitsQueue.getMin()];
         }
     }
 
-    /* 
+    /*
      *  Constants
      */
     function getChildChain(uint256 blockNumber)
@@ -243,13 +255,5 @@ contract RootChain {
         returns (bytes32, uint256)
     {
         return (childChain[blockNumber].root, childChain[blockNumber].created_at);
-    }
-
-    function getExit(uint256 priority)
-        public
-        view
-        returns (address, uint256, uint256)
-    {
-        return (exits[priority].owner, exits[priority].amount, exits[priority].utxoPos);
     }
 }
