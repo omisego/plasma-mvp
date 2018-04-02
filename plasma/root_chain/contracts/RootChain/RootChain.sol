@@ -24,6 +24,7 @@ contract RootChain {
      */
     event Deposit(address depositor, uint256 amount);
     event Exit(address exitor, uint256 utxoPos);
+    event Withdrawal(address withdrawer, uint256 amount);
 
     /*
      *  Storage
@@ -31,6 +32,7 @@ contract RootChain {
     mapping(uint256 => childBlock) public childChain;
     mapping(uint256 => exit) public exits;
     mapping(uint256 => uint256) public exitIds;
+    mapping(address => uint256) public balances;
     PriorityQueue exitsQueue;
     address public authority;
     /* Block numbering scheme below is needed to prevent Ethereum reorg from invalidating blocks submitted
@@ -166,6 +168,7 @@ contract RootChain {
         bytes32 root = childChain[blknum].root;
 
         require(msg.sender == txList[6 + 2 * oindex].toAddress());
+        require(txList[7 + 2 * oindex].toUint() > 0);
         bytes32 txHash = keccak256(txBytes);
         bytes32 merkleHash = keccak256(txHash, ByteUtils.slice(sigs, 0, 130));
         require(Validate.checkSigs(txHash, root, txList[0].toUint(), txList[3].toUint(), sigs));
@@ -225,7 +228,9 @@ contract RootChain {
         exit memory currentExit = exits[exitsQueue.getMin()];
         uint256 blknum = currentExit.utxoPos.div(1000000000);
         while (childChain[blknum].created_at < twoWeekOldTimestamp && exitsQueue.currentSize() > 0) {
-            currentExit.owner.transfer(currentExit.amount);
+            // currentExit.owner.transfer(currentExit.amount);
+            // Prevents attacker from submitting an address of a malicous contract that could revert transfer()
+            balances[currentExit.owner] = balances[currentExit.owner].add(currentExit.amount);
             uint256 priority = exitsQueue.delMin();
             delete exits[priority];
             delete exitIds[currentExit.utxoPos];
@@ -233,7 +238,19 @@ contract RootChain {
         }
     }
 
-    /* 
+    // @dev Allows any to withdraw their funds from the contract (eg. exit refunds, bonds, etc.)
+    // @dev Isolates transfers so attacker can't halt essential processes by reverting transfer()
+    function withdraw()
+        public
+    {
+        require(balances[msg.sender] > 0);
+        uint256 transferAmount = balances[msg.sender];
+        delete balances[msg.sender];
+        msg.sender.transfer(transferAmount);
+        Withdrawal(msg.sender, transferAmount);
+    }
+
+    /*
      *  Constants
      */
     function getChildChain(uint256 blockNumber)
