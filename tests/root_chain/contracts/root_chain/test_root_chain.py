@@ -21,13 +21,12 @@ def testNextBlockNumber(t, root_chain):
 
 
 def test_deposit(t, root_chain):
-    owner, value_1 = t.a1, 100
+    owner, value_1, key = t.a1, 100, t.k1
     null_address = b'\x00' * 20
     tx = Transaction(0, 0, 0, 0, 0, 0,
                      owner, value_1, null_address, 0, 0)
-    tx_bytes = rlp.encode(tx, UnsignedTransaction)
     blknum = root_chain.getDepositBlock()
-    root_chain.deposit(tx_bytes, value=value_1)
+    root_chain.deposit(value=value_1, sender=key)
     assert root_chain.getChildChain(blknum)[0] == get_merkle_of_leaves(16, [tx.hash + tx.sig1 + tx.sig2]).root
     assert root_chain.getChildChain(blknum)[1] == t.chain.head_state.timestamp
 
@@ -41,7 +40,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     tx_bytes1 = rlp.encode(tx1, UnsignedTransaction)
     dep_blknum = root_chain.getDepositBlock()
     assert dep_blknum == 1
-    root_chain.deposit(tx_bytes1, value=value_1)
+    root_chain.deposit(value=value_1, sender=key)
     merkle = FixedMerkle(16, [tx1.merkle_hash], True)
     proof = merkle.create_membership_proof(tx1.merkle_hash)
     confirmSig1 = confirm_tx(tx1, root_chain.getChildChain(dep_blknum)[0], key)
@@ -79,7 +78,7 @@ def test_start_exit(t, root_chain, assert_tx_failed):
     t.chain.revert(snapshot)
     dep2_blknum = root_chain.getDepositBlock()
     assert dep2_blknum == 1001
-    root_chain.deposit(tx_bytes1, value=value_1)
+    root_chain.deposit(value=value_1, sender=key)
     tx3 = Transaction(child_blknum, 0, 0, dep2_blknum, 0, 0,
                       owner, value_1, null_address, 0, 0)
     tx3.sign1(key)
@@ -107,7 +106,7 @@ def test_challenge_exit(t, u, root_chain):
                       owner, value_1, null_address, 0, 0)
     tx_bytes1 = rlp.encode(tx1, UnsignedTransaction)
     dep1_blknum = root_chain.getDepositBlock()
-    root_chain.deposit(tx_bytes1, value=value_1)
+    root_chain.deposit(value=value_1, sender=key)
     merkle = FixedMerkle(16, [tx1.merkle_hash], True)
     proof = merkle.create_membership_proof(tx1.merkle_hash)
     confirmSig1 = confirm_tx(tx1, root_chain.getChildChain(dep1_blknum)[0], key)
@@ -140,7 +139,7 @@ def test_finalize_exits(t, u, root_chain):
                       owner, value_1, null_address, 0, 0)
     tx_bytes1 = rlp.encode(tx1, UnsignedTransaction)
     dep1_blknum = root_chain.getDepositBlock()
-    root_chain.deposit(tx_bytes1, value=value_1)
+    root_chain.deposit(value=value_1, sender=key)
     merkle = FixedMerkle(16, [tx1.merkle_hash], True)
     proof = merkle.create_membership_proof(tx1.merkle_hash)
     confirmSig1 = confirm_tx(tx1, root_chain.getChildChain(dep1_blknum)[0], key)

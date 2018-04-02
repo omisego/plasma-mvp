@@ -2,7 +2,9 @@ pragma solidity 0.4.18;
 import 'SafeMath.sol';
 import 'Math.sol';
 import 'RLP.sol';
+import 'RLPEncode.sol';
 import 'Merkle.sol';
+import 'ByteUtils.sol';
 import 'Validate.sol';
 import 'PriorityQueue.sol';
 
@@ -18,6 +20,10 @@ contract RootChain {
     using RLP for bytes;
     using RLP for RLP.RLPItem;
     using RLP for RLP.Iterator;
+    using RLPEncode for bytes[];
+    using RLPEncode for bytes;
+    using ByteUtils for bytes;
+    using ByteUtils for bytes32;
     using Merkle for bytes32;
 
     /*
@@ -121,25 +127,44 @@ contract RootChain {
         currentDepositBlock = 1;
     }
 
+    // @dev Encode Plasma transaction in RLP using raw transaction
+    function encodeRLP() internal returns (bytes) {
+        uint256 i;
+        bytes[] memory txItems = new bytes[](11);
+
+        bytes memory null20bytes = new bytes(20);
+        bytes memory null0bytes = new bytes(0).encodeBytes();
+
+        for (i = 0; i < null20bytes.length; i++) {
+            null20bytes[i] = 0x00;
+        }
+
+        null20bytes = null20bytes.encodeBytes();
+
+        for (i = 0; i < 6; i++) {
+            txItems[i] = null0bytes;
+        }
+
+        txItems[6] = bytes32(msg.sender).bytes32ToBytes().encodeBytes();
+        txItems[7] = bytes32(msg.value).bytes32ToBytes().encodeBytes();
+        txItems[8] = null20bytes;
+        txItems[9] = null0bytes;
+        txItems[10] = null0bytes;
+
+        return txItems.encodeList();
+    }
+
     // @dev Allows anyone to deposit funds into the Plasma chain
-    // @param txBytes The format of the transaction that'll become the deposit
-    // TODO: This needs to be optimized so that the transaction is created
-    //       from msg.sender and msg.value
-    function deposit(bytes txBytes)
+    function deposit()
         public
         payable
     {
         require(currentDepositBlock < childBlockInterval);
-        var txList = txBytes.toRLPItem().toList(11);
-        require(txList.length == 11);
-        for (uint256 i; i < 6; i++) {
-            require(txList[i].toUint() == 0);
-        }
-        require(txList[7].toUint() == msg.value);
-        require(txList[9].toUint() == 0);
+        bytes memory txBytes = encodeRLP();
         bytes32 zeroBytes;
         bytes32 root = keccak256(keccak256(txBytes), new bytes(130));
-        for (i = 0; i < 16; i++) {
+
+        for (uint256 i = 0; i < 16; i++) {
             root = keccak256(root, zeroBytes);
             zeroBytes = keccak256(zeroBytes, zeroBytes);
         }
@@ -148,7 +173,7 @@ contract RootChain {
             created_at: block.timestamp
         });
         currentDepositBlock = currentDepositBlock.add(1);
-        Deposit(txList[6].toAddress(), txList[7].toUint());
+        Deposit(msg.sender, msg.value);
     }
 
     // @dev Starts to exit a specified utxo
@@ -234,7 +259,7 @@ contract RootChain {
         }
     }
 
-    /* 
+    /*
      *  Constants
      */
     function getChildChain(uint256 blockNumber)
