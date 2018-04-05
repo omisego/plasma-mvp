@@ -45,6 +45,8 @@ contract RootChain {
     uint256 public weekOldBlock;
     uint256 public childBlockInterval;
 
+    bytes32[16] zeroHashes;
+
     struct exit {
         address owner;
         uint256 amount;
@@ -103,6 +105,8 @@ contract RootChain {
         currentDepositBlock = 1;
         weekOldBlock = 1;
         exitsQueue = new PriorityQueue();
+
+        generateZeroHashes();
     }
 
     // @dev Allows Plasma chain operator to submit block root
@@ -129,24 +133,27 @@ contract RootChain {
         payable
     {
         require(currentDepositBlock < childBlockInterval);
+
         var txList = txBytes.toRLPItem().toList(11);
+
         require(txList.length == 11);
         for (uint256 i; i < 6; i++) {
             require(txList[i].toUint() == 0);
         }
         require(txList[7].toUint() == msg.value);
         require(txList[9].toUint() == 0);
-        bytes32 zeroBytes;
+
         bytes32 root = keccak256(keccak256(txBytes), new bytes(130));
         for (i = 0; i < 16; i++) {
-            root = keccak256(root, zeroBytes);
-            zeroBytes = keccak256(zeroBytes, zeroBytes);
+            root = keccak256(root, zeroHashes[i]);
         }
+
         childChain[getDepositBlock()] = childBlock({
             root: root,
             created_at: block.timestamp
         });
         currentDepositBlock = currentDepositBlock.add(1);
+
         Deposit(txList[6].toAddress(), txList[7].toUint());
     }
 
@@ -233,9 +240,29 @@ contract RootChain {
         }
     }
 
-    /* 
-     *  Constants
+
+    /*
+     * Private Functions
      */
+    
+    /**
+     * @dev Pre-generates hashes required to create deposit transactions
+     */
+    function generateZeroHashes()
+        private
+    {
+        bytes32 zeroHash;
+        for (uint256 i = 0; i < 16; i++) {
+            zeroHashes[i] = zeroHash;
+            zeroHash = keccak256(zeroHash, zeroHash);
+        }
+    }
+
+
+    /* 
+     * Constants
+     */
+
     function getChildChain(uint256 blockNumber)
         public
         view
