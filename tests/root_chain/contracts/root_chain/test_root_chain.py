@@ -175,6 +175,8 @@ def test_finalize_exits(t, u, root_chain):
     assert root_chain.exits(utxo_pos1) == ['0x' + owner.hex(), 100]
     pre_balance = t.chain.head_state.get_balance(owner)
     root_chain.finalizeExits(sender=t.k2)
+    assert root_chain.balances(owner) == value_1
+    root_chain.withdraw(sender=key)
     post_balance = t.chain.head_state.get_balance(owner)
     assert post_balance == pre_balance + value_1
     assert root_chain.exits(utxo_pos1) == ['0x0000000000000000000000000000000000000000', value_1]

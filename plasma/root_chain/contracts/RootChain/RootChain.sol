@@ -25,12 +25,13 @@ contract RootChain {
      */
     event Deposit(address depositor, uint256 amount, uint256 depositBlock);
     event Exit(address exitor, uint256 utxoPos);
-
+    event Withdrawal(address withdrawer, uint256 amount);
     /*
      *  Storage
      */
     mapping(uint256 => childBlock) public childChain;
     mapping(uint256 => exit) public exits;
+    mapping(address => uint256) public balances;
     PriorityQueue exitsQueue;
     address public authority;
     /* Block numbering scheme below is needed to prevent Ethereum reorg from invalidating blocks submitted
@@ -42,6 +43,7 @@ contract RootChain {
     uint256 public currentChildBlock; /* ends with 000 */
     uint256 public currentDepositBlock; /* takes values in range 1..999 */
     uint256 public childBlockInterval;
+    uint256 public virtualBalance;
 
     struct exit {
         address owner;
@@ -102,6 +104,7 @@ contract RootChain {
             root: root,
             created_at: block.timestamp
         });
+        virtualBalance = virtualBalance.add(msg.value);
         currentDepositBlock = currentDepositBlock.add(1);
         Deposit(msg.sender, msg.value, depositBlock);
     }
@@ -194,7 +197,8 @@ contract RootChain {
         exit memory currentExit = exits[utxoPos];
         while (created_at < twoWeekOldTimestamp) {
             currentExit = exits[utxoPos];
-            currentExit.owner.transfer(currentExit.amount);
+            balances[currentExit.owner] = balances[currentExit.owner].add(currentExit.amount);
+            virtualBalance = virtualBalance.sub(currentExit.amount);
             exitsQueue.delMin();
             delete exits[utxoPos].owner;
 
@@ -205,7 +209,19 @@ contract RootChain {
             }
         }
     }
+    // @dev Allows any to withdraw their funds from the contract (eg. exit refunds, bonds, etc.)
+    // @dev Isolates transfers so attacker can't halt essential processes by reverting transfer()
+    function withdraw()
+        public
+    {
+        require(balances[msg.sender] > 0);
+        uint256 transferAmount = balances[msg.sender];
+        delete balances[msg.sender];
+        msg.sender.transfer(transferAmount);
+        Withdrawal(msg.sender, transferAmount);
+    }
 
+    
     /* 
      *  Constant functions
      */
