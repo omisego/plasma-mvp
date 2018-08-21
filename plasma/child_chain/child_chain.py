@@ -1,5 +1,9 @@
+import rlp
+from ethereum import utils
+
 from plasma_core.block import Block
 from plasma_core.chain import Chain
+from plasma_core.transaction import Transaction
 from plasma_core.utils.transactions import get_deposit_tx, encode_utxo_id
 from .root_event_listener import RootEventListener
 
@@ -32,7 +36,11 @@ class ChildChain(object):
         deposit_block = Block([deposit_tx], number=blknum)
         self.chain.add_block(deposit_block)
 
-    def apply_transaction(self, tx):
+    def apply_transaction(self, encoded_transaction):
+        try:
+            tx = rlp.decode(utils.decode_hex(encoded_transaction), Transaction)
+        except TypeError:
+            tx = encoded_transaction
         self.chain.validate_transaction(tx, self.current_block.spent_utxos)
         self.current_block.add_transaction(tx)
         return encode_utxo_id(self.current_block.number, len(self.current_block.transaction_set) - 1, 0)

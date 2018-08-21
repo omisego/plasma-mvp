@@ -5,6 +5,7 @@
 env*/
 .vscode/
 .DS_Store
+.idea/*
 
 # Distibution
 dist/
