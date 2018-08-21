@@ -3,7 +3,7 @@ from ethereum import utils
 from web3 import HTTPProvider
 from plasma_core.block import Block
 from plasma_core.transaction import Transaction, UnsignedTransaction
-from plasma_core.constants import NULL_ADDRESS, CONTRACT_ADDRESS
+from plasma_core.constants import NULL_ADDRESS, NULL_ADDRESS_HEX, CONTRACT_ADDRESS
 from plasma.root_chain.deployer import Deployer
 from .child_chain_service import ChildChainService
 
@@ -50,7 +50,7 @@ class Client(object):
         self.root_chain.startExit(utxo_pos, encoded_transaction, proof, sigs, transact={'from': '0x' + tx.newowner1.hex()})
 
     def withdraw_deposit(self, owner, deposit_pos, amount):
-        self.root_chain.startDepositExit(deposit_pos, amount, transact={'from': owner})
+        self.root_chain.startDepositExit(deposit_pos, NULL_ADDRESS_HEX, amount, transact={'from': owner})
 
     def get_transaction(self, blknum, txindex):
         encoded_transaction = self.child_chain.get_transaction(blknum, txindex)

@@ -17,3 +17,6 @@ contract_data/
 
 *.pyc
 build/
+
+# IDE indexing
+.idea/*
