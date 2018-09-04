@@ -79,8 +79,12 @@ def sendtx(client,
         tx.sign1(utils.normalize_key(key1))
     if key2:
         tx.sign2(utils.normalize_key(key2))
-
-    client_call(client.apply_transaction, [tx], "Sent transaction")
+    print(client.get_current_block())
+    blknum = client.get_current_block().number
+    print(blknum)
+    output = client_call(client.apply_transaction, [tx], "Sent transaction")
+    # root = client.root_chain.getChildChain(blknum)[0]
+    # confirmSig = confirm_tx(tx, root, _key)
 
 
 @cli.command()
@@ -96,6 +100,7 @@ def submitblock(client, key):
     normalized_key = utils.normalize_key(key)
     block.sign(normalized_key)
 
+    print("block: ", block.__dict__)
     client_call(client.submit_block, [block], "Submitted current block")
 
 
@@ -139,6 +144,39 @@ def withdrawdeposit(client, owner, blknum, amount):
     client.withdraw_deposit(owner, deposit_pos, amount)
     print("Submitted withdrawal")
 
+@cli.command()
+@click.argument('account', required=True)
+@click.pass_obj
+def finalize_exits(client, account):
+    client.finalize_exits(account)
+    print("Submitted finalizeExits")
+
+@cli.command()
+@click.argument('blknum', required=True, type=int)
+@click.argument('key', required=True)
+@click.pass_obj
+def confirm_sig(client, blknum, key):
+    utxo_id = blknum * 1000000000 + 10000 * 0 + 0
+
+    tx = client.get_transaction(utxo_id)
+    print(tx.__dict__)
+
+    _key = utils.normalize_key(key)
+
+    root = client.root_chain.getChildChain(blknum)[0]
+    confirmSig = confirm_tx(tx, root, _key)
+
+    print("confirm sig: ", utils.encode_hex(confirmSig))
+
+@cli.command()
+@click.argument('blknum', required=True, type=int)
+@click.argument('confirm_sig_hex', required=True)
+@click.argument('account', required=True)
+@click.pass_obj
+def challenge_exit(client, blknum, confirm_sig_hex, account):
+    confirmSig = utils.decode_hex(confirm_sig_hex)
+    client.challenge_exit(blknum, confirmSig, account)
+    print("Submitted challenge exit")
 
 if __name__ == '__main__':
     cli()
