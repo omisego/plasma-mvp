@@ -6,6 +6,9 @@ from plasma_core.transaction import Transaction, UnsignedTransaction
 from plasma_core.constants import NULL_ADDRESS, CONTRACT_ADDRESS
 from plasma.root_chain.deployer import Deployer
 from .child_chain_service import ChildChainService
+from plasma_core.utils.utils import confirm_tx
+from plasma_core.utils.merkle.fixed_merkle import FixedMerkle
+from eth_utils import address
 
 
 class Client(object):
@@ -47,17 +50,25 @@ class Client(object):
     def withdraw(self, blknum, txindex, oindex, tx, proof, sigs):
         utxo_pos = blknum * 1000000000 + txindex * 10000 + oindex * 1
         encoded_transaction = rlp.encode(tx, UnsignedTransaction)
-        self.root_chain.startExit(utxo_pos, encoded_transaction, proof, sigs, transact={'from': '0x' + tx.newowner1.hex()})
+        _from = ''
+        if oindex == 0:
+            _from = address.to_checksum_address('0x'+tx.newowner1.hex())
+        else:
+            _from = address.to_checksum_address('0x'+tx.newowner2.hex())
+
+        self.root_chain.startExit(utxo_pos, encoded_transaction, proof, sigs, transact={'from': _from})
 
     def withdraw_deposit(self, owner, deposit_pos, amount):
         self.root_chain.startDepositExit(deposit_pos, NULL_ADDRESS, amount, transact={'from': owner})
 
-    def get_transaction(self, blknum, txindex):
-        encoded_transaction = self.child_chain.get_transaction(blknum, txindex)
+    def get_transaction(self, utxo_id):
+        encoded_transaction = self.child_chain.get_transaction(utxo_id)
+        print(encoded_transaction)
         return rlp.decode(utils.decode_hex(encoded_transaction), Transaction)
 
     def get_current_block(self):
         encoded_block = self.child_chain.get_current_block()
+        print(encoded_block)
         return rlp.decode(utils.decode_hex(encoded_block), Block)
 
     def get_block(self, blknum):
@@ -66,3 +77,20 @@ class Client(object):
 
     def get_current_block_num(self):
         return self.child_chain.get_current_block_num()
+
+    def finalize_exits(self, account):
+        self.root_chain.finalizeExits(NULL_ADDRESS, transact={'from': account})
+
+    def challenge_exit(self, blknum, confirmSig, account):
+        oindex = 0
+        utxo_pos = blknum * 1000000000 + 10000 * 0 + oindex
+
+        tx = self.get_transaction(utxo_pos)
+        tx_bytes = rlp.encode(tx, UnsignedTransaction)
+
+        merkle = FixedMerkle(16, [tx.merkle_hash], True)
+        proof = merkle.create_membership_proof(tx.merkle_hash)
+
+        sigs = tx.sig1 + tx.sig2
+
+        return self.root_chain.challengeExit(utxo_pos, oindex, tx_bytes, proof, sigs, confirmSig, transact={'from': account})

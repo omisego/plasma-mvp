@@ -112,7 +112,7 @@ contract RootChain {
     function submitBlock(bytes32 _root)
         public
         onlyOperator
-    {   
+    {
         childChain[currentChildBlock] = ChildBlock({
             root: _root,
             timestamp: block.timestamp
@@ -198,14 +198,14 @@ contract RootChain {
     {
         uint256 blknum = _utxoPos / 1000000000;
         uint256 txindex = (_utxoPos % 1000000000) / 10000;
-        uint256 oindex = _utxoPos - blknum * 1000000000 - txindex * 10000; 
+        uint256 oindex = _utxoPos - blknum * 1000000000 - txindex * 10000;
 
         // Check the sender owns this UTXO.
         var exitingTx = _txBytes.createExitingTx(oindex);
         require(msg.sender == exitingTx.exitor);
 
         // Check the transaction was included in the chain and is correctly signed.
-        bytes32 root = childChain[blknum].root; 
+        bytes32 root = childChain[blknum].root;
         bytes32 merkleHash = keccak256(keccak256(_txBytes), ByteUtils.slice(_sigs, 0, 130));
         require(Validate.checkSigs(keccak256(_txBytes), root, exitingTx.inputCount, _sigs));
         require(merkleHash.checkMembership(txindex, root, _proof));
@@ -262,7 +262,7 @@ contract RootChain {
     }
 
     /**
-     * @dev Processes any exits that have completed the challenge period. 
+     * @dev Processes any exits that have completed the challenge period.
      * @param _token Token type to process.
      */
     function finalizeExits(address _token)
@@ -292,7 +292,7 @@ contract RootChain {
     }
 
 
-    /* 
+    /*
      * Public view functions
      */
 

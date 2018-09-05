@@ -82,7 +82,6 @@ def sendtx(client,
 
     client_call(client.apply_transaction, [tx], "Sent transaction")
 
-
 @cli.command()
 @click.argument('key', required=True)
 @click.pass_obj
@@ -115,7 +114,6 @@ def withdraw(client,
 
     # Create a Merkle proof
     tx = block.transaction_set[txindex]
-    block.merklize_transaction_set()
     proof = block.merkle.create_membership_proof(tx.merkle_hash)
 
     # Create the confirmation signatures
@@ -140,6 +138,38 @@ def withdrawdeposit(client, owner, blknum, amount):
     client.withdraw_deposit(owner, deposit_pos, amount)
     print("Submitted withdrawal")
 
+@cli.command()
+@click.argument('account', required=True)
+@click.pass_obj
+def finalize_exits(client, account):
+    client.finalize_exits(account)
+    print("Submitted finalizeExits")
+
+@cli.command()
+@click.argument('blknum', required=True, type=int)
+@click.argument('key', required=True)
+@click.pass_obj
+def confirm_sig(client, blknum, key):
+    utxo_id = blknum * 1000000000 + 10000 * 0 + 0
+
+    tx = client.get_transaction(utxo_id)
+
+    _key = utils.normalize_key(key)
+
+    root = client.root_chain.getChildChain(blknum)[0]
+    confirmSig = confirm_tx(tx, root, _key)
+
+    print("confirm sig: ", utils.encode_hex(confirmSig))
+
+@cli.command()
+@click.argument('blknum', required=True, type=int)
+@click.argument('confirm_sig_hex', required=True)
+@click.argument('account', required=True)
+@click.pass_obj
+def challenge_exit(client, blknum, confirm_sig_hex, account):
+    confirmSig = utils.decode_hex(confirm_sig_hex)
+    client.challenge_exit(blknum, confirmSig, account)
+    print("Submitted challenge exit")
 
 if __name__ == '__main__':
     cli()
