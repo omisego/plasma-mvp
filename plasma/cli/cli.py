@@ -79,13 +79,8 @@ def sendtx(client,
         tx.sign1(utils.normalize_key(key1))
     if key2:
         tx.sign2(utils.normalize_key(key2))
-    print(client.get_current_block())
-    blknum = client.get_current_block().number
-    print(blknum)
-    output = client_call(client.apply_transaction, [tx], "Sent transaction")
-    # root = client.root_chain.getChildChain(blknum)[0]
-    # confirmSig = confirm_tx(tx, root, _key)
 
+    client_call(client.apply_transaction, [tx], "Sent transaction")
 
 @cli.command()
 @click.argument('key', required=True)
@@ -100,7 +95,6 @@ def submitblock(client, key):
     normalized_key = utils.normalize_key(key)
     block.sign(normalized_key)
 
-    print("block: ", block.__dict__)
     client_call(client.submit_block, [block], "Submitted current block")
 
 
@@ -159,7 +153,6 @@ def confirm_sig(client, blknum, key):
     utxo_id = blknum * 1000000000 + 10000 * 0 + 0
 
     tx = client.get_transaction(utxo_id)
-    print(tx.__dict__)
 
     _key = utils.normalize_key(key)
 

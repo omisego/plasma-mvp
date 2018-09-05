@@ -56,7 +56,6 @@ class Client(object):
         else:
             _from = address.to_checksum_address('0x'+tx.newowner2.hex())
 
-        print("from: ", _from)
         self.root_chain.startExit(utxo_pos, encoded_transaction, proof, sigs, transact={'from': _from})
 
     def withdraw_deposit(self, owner, deposit_pos, amount):
@@ -87,7 +86,6 @@ class Client(object):
         utxo_pos = blknum * 1000000000 + 10000 * 0 + oindex
 
         tx = self.get_transaction(utxo_pos)
-        print(tx.__dict__)
         tx_bytes = rlp.encode(tx, UnsignedTransaction)
 
         merkle = FixedMerkle(16, [tx.merkle_hash], True)
