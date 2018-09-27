@@ -146,7 +146,7 @@ def test_challenge_exit(t, u, root_chain, assert_tx_failed):
                       NULL_ADDRESS,
                       owner, value_1, NULL_ADDRESS, 0)
     deposit_tx_hash = get_deposit_hash(owner, NULL_ADDRESS, value_1)
-    utxo_pos1 = root_chain.getDepositBlock() * 1000000000 + 1
+    utxo_pos1 = root_chain.getDepositBlock() * 1000000000
     root_chain.deposit(value=value_1, sender=key)
     utxo_pos2 = root_chain.getDepositBlock() * 1000000000
     root_chain.deposit(value=value_1, sender=key)
@@ -167,7 +167,7 @@ def test_challenge_exit(t, u, root_chain, assert_tx_failed):
     confirmSig = confirm_tx(tx3, root_chain.getPlasmaBlock(child_blknum)[0], key)
     sigs = tx3.sig1 + tx3.sig2
     utxo_pos3 = child_blknum * 1000000000 + 10000 * 0 + 0
-    tx4 = Transaction(utxo_pos1, 0, 0, 0, 0, 0,
+    tx4 = Transaction(int(utxo_pos1 / 1000000000), 0, 0, 0, 0, 0,
                       NULL_ADDRESS,
                       owner, value_1, NULL_ADDRESS, 0)
     tx4.sign1(key)

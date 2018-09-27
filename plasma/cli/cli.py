@@ -115,7 +115,6 @@ def withdraw(client,
 
     # Create a Merkle proof
     tx = block.transaction_set[txindex]
-    block.merklize_transaction_set()
     proof = block.merkle.create_membership_proof(tx.merkle_hash)
 
     # Create the confirmation signatures

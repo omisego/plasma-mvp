@@ -279,7 +279,12 @@ contract RootChain {
             // FIXME: handle ERC-20 transfer
             require(address(0) == _token);
 
-            currentExit.owner.transfer(currentExit.amount);
+            // Prevent the exit which owner is deleted
+            // see function challengeExit()
+            if (address(0) != currentExit.owner) {
+                currentExit.owner.transfer(currentExit.amount);
+            }
+
             queue.delMin();
             delete exits[utxoPos].owner;
 
