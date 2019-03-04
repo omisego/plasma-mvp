@@ -9,7 +9,7 @@ library Merkle {
     /*
      * Internal function
      */
-    
+
     /**
      * @dev Checks that a leaf is actually in a Merkle tree.
      * @param _leaf Leaf to verify.
@@ -35,7 +35,7 @@ library Merkle {
             assembly {
                 proofElement := mload(add(_proof, i))
             }
-            if (_index % 2 == 0) {
+            if (index % 2 == 0) {
                 computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
             } else {
                 computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
