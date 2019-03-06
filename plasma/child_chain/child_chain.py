@@ -11,11 +11,15 @@ class ChildChain(object):
         self.root_chain = root_chain
         self.chain = Chain(self.operator)
         self.current_block = Block(number=self.chain.next_child_block)
-
+        print("self.current_block {0}".format(self.current_block.number))
         # Listen for events
         self.event_listener = RootEventListener(root_chain, confirmations=0)
         self.event_listener.on('Deposit', self.apply_deposit)
         self.event_listener.on('ExitStarted', self.apply_exit)
+        self.event_listener.on('Msgsender', self.msgsender)
+
+    def msgsender(self, event):
+        print("msgsender {0}".format(event['args']))
 
     def apply_exit(self, event):
         event_args = event['args']
@@ -23,6 +27,7 @@ class ChildChain(object):
         self.chain.mark_utxo_spent(utxo_id)
 
     def apply_deposit(self, event):
+        print("apply deposit {0}".format(event['args']))
         event_args = event['args']
         owner = event_args['depositor']
         amount = event_args['amount']
@@ -33,6 +38,7 @@ class ChildChain(object):
         self.chain.add_block(deposit_block)
 
     def apply_transaction(self, tx):
+        print("spent_utxos {0}".format(self.current_block.spent_utxos))
         self.chain.validate_transaction(tx, self.current_block.spent_utxos)
         self.current_block.add_transaction(tx)
         return encode_utxo_id(self.current_block.number, len(self.current_block.transaction_set) - 1, 0)

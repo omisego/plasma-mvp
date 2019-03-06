@@ -33,6 +33,7 @@ class RootEventListener(object):
 
         self.__listen_for_event('Deposit')
         self.__listen_for_event('ExitStarted')
+        self.__listen_for_event('Msgsender')
 
     def on(self, event_name, event_handler):
         """Registers an event handler to an event by name.

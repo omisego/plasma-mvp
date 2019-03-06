@@ -38,6 +38,7 @@ class Client(object):
         return transaction
 
     def deposit(self, amount, owner):
+        print("Owner Address {0}".format(owner))
         self.root_chain.deposit(transact={'from': owner, 'value': amount})
 
     def apply_transaction(self, transaction):
@@ -51,10 +52,14 @@ class Client(object):
         encoded_transaction = rlp.encode(tx, UnsignedTransaction)
         owner = tx.newowner1 if oindex == 0 else tx.newowner2
         owner_addr = address.to_checksum_address('0x' + owner.hex())
-        self.root_chain.startExit(utxo_pos, encoded_transaction, proof, sigs, transact={'from': owner_addr})
+        bond = 1234567890
+        self.root_chain.startExit(utxo_pos, encoded_transaction, proof, sigs, transact={'from': owner_addr, 'value': bond})
 
     def withdraw_deposit(self, owner, deposit_pos, amount):
-        self.root_chain.startDepositExit(deposit_pos, NULL_ADDRESS, amount, transact={'from': owner})
+        print("wd utxo_pos {0}".format(deposit_pos))
+        print("wd amount {0}".format(amount))
+        bond = 1234567890
+        self.root_chain.startDepositExit(deposit_pos, NULL_ADDRESS, amount, transact={'from': owner, 'value': bond})
 
     def get_transaction(self, blknum, txindex):
         encoded_transaction = self.child_chain.get_transaction(blknum, txindex)

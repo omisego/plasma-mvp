@@ -45,6 +45,11 @@ contract RootChain {
         address token
     );
 
+    event Msgsender(
+        address sender,
+        uint256 bond,
+        address token
+    );
 
     /*
      * Storage
@@ -158,6 +163,8 @@ contract RootChain {
         public payable onlyWithValue(EXIT_BOND)
     {
         uint256 blknum = _depositPos / 1000000000;
+
+        emit Msgsender(msg.sender, msg.value, _token);
 
         // Check that the given UTXO is a deposit.
         require(blknum % CHILD_BLOCK_INTERVAL != 0, "Referenced block must be a deposit block.");
